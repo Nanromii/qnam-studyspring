@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: "qnam-studyspring"
+  profiles:
+    active: ${MY_ACTIVE_PROFILE:dev}
+

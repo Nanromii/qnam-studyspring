@@ -1,0 +1,114 @@
+package vn.qnam.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import vn.qnam.configuration.Translator;
+import vn.qnam.dto.reponse.PageResponse;
+import vn.qnam.dto.reponse.ResponseData;
+import vn.qnam.dto.reponse.ResponseError;
+import vn.qnam.dto.reponse.UserDetailResponse;
+import vn.qnam.dto.request.UserRequestDTO;
+import vn.qnam.exception.ResourceNotFoundException;
+import vn.qnam.servie.UserService;
+import vn.qnam.util.UserStatus;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/user")
+@Validated
+@Slf4j
+@Tag(name = "User Controller")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    //@PostMapping("/")
+    @Operation(method = "POST", summary = "Add User", description = "API create new user")
+    @RequestMapping(method = RequestMethod.POST, path = "/")
+    public ResponseData<Long> addUser(@Valid @RequestBody UserRequestDTO userDTO) {
+        log.info("Request add user, {} {}", userDTO.getFirstName(), userDTO.getLastName());
+        try {
+            long userId = userService.addUser(userDTO);
+            return new ResponseData<>(HttpStatus.CREATED.value(), Translator.toLocale("user.add.success"), userId);
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "User added fail");
+        }
+    }
+
+    @Operation(summary = "Update User", description = "API update user")
+    @PutMapping("/{userId}")
+    public ResponseData<?> updateUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId, @Valid @RequestBody UserRequestDTO userDTO) {
+        return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.update.success"));
+    }
+
+    @PatchMapping("/{userId}")
+    @Operation(summary = "Change user status", description = "API change user status")
+    public ResponseData<?> changeStatus(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId, @RequestParam UserStatus status) {
+        return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.changeStatus.success"));
+    }
+
+    @Operation(summary = "Delete user", description = "API delete user")
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseData<?> deleteUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId) {
+        return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.del.success"));
+    }
+
+    @GetMapping("/{userId}")
+    @Operation(summary = "Get user", description = "API get user")
+    public ResponseData<UserDetailResponse> getUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId) {
+        log.info("Request get user with userId={}", userId);
+        try {
+            UserDetailResponse userDetailResponse = userService.getUser(userId);
+            return new ResponseData<>(HttpStatus.OK.value(),
+                    Translator.toLocale("user.getUser.success"),
+                    userDetailResponse);
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get user fail. " + e.getMessage());
+        }
+
+    }
+
+    @GetMapping("/list")
+    @Operation(summary = "Get list of user", description = "API get list user")
+    public ResponseData<PageResponse<?>> getAllUsers(
+            @RequestParam(defaultValue = "0") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String... sorts) {
+        log.info("Get all users from {} to {}", pageNo, pageSize);
+        try {
+            return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
+                    userService.getAllUser(pageNo, pageSize, sorts));
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get all users fail. " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-list-user-by-filtering")
+    @Operation(summary = "Get users by filtering", description = "API get users by filtering")
+    public ResponseData<PageResponse<?>> getUsersByFiltering(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortBy) {
+        log.info("Get users by filtering");
+        try {
+            return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"), userService.getUsersByFiltering(pageNo, pageSize, search, sortBy));
+        } catch (ResourceNotFoundException e) {
+            log.info("error message={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get users by filtering fail: " + e.getMessage());
+        }
+
+    }
+}

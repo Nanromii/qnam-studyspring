@@ -1,5 +1,6 @@
 package vn.qnam.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.qnam.util.Gender;
@@ -54,6 +55,7 @@ public class User extends AbstractEntity {
     @Column(name = "type")
     private Type type;
 
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")
     private List<Score> scoresList;
 

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.PageResponse;
 import vn.qnam.dto.reponse.UserDetailResponse;
@@ -16,7 +17,10 @@ import vn.qnam.model.Score;
 import vn.qnam.model.User;
 import vn.qnam.repository.FilterRepository;
 import vn.qnam.repository.UserRepository;
+import vn.qnam.repository.specification.UserSpec;
+import vn.qnam.repository.specification.UserSpecificationBuilder;
 import vn.qnam.servie.UserService;
+import vn.qnam.util.Gender;
 import vn.qnam.util.Type;
 import vn.qnam.util.UserStatus;
 
@@ -68,7 +72,7 @@ public class UserServiceImpl implements UserService{
         user.setPassword(requestDTO.getPassword());
         user.setStatus(requestDTO.getStatus());
         user.setType(Type.valueOf(requestDTO.getType().toUpperCase()));
-        user.setScoresList(convertToScore(requestDTO.getScore()));
+        user.setScoresList(convertToScore(requestDTO.getScore(), user));
         userRepository.save(user);
         log.info("User has updated successfully, userId={}", userId);
     }
@@ -137,15 +141,57 @@ public class UserServiceImpl implements UserService{
         return filterRepository.getUsersByFiltering(pageNo, pageSize, search, sortBy);
     }
 
-    private List<Score> convertToScore(List<ScoreDTO> scoreDTOList) {
+    @Override
+    public PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy, String score, String... search) {
+        return filterRepository.getUsersByCriteria(pageNo, pageSize, sortBy, score, search);
+    }
+
+    @Override
+    public PageResponse<?> searchWithSpecification(Pageable pageable, String[] user, String[] score) {
+        if (user != null && score != null) {
+
+        } else if (user != null) {
+            /*Specification<User> spec = UserSpec.hasFirstName("N");
+            Specification<User> genderSpec = UserSpec.equalGender(Gender.MALE);
+            Specification<User> finalSpec = spec.and(genderSpec);*/
+            UserSpecificationBuilder builder = new UserSpecificationBuilder();
+            for (String u : user) {
+                Pattern pattern = Pattern.compile("(\\w+?)([<:>~!])(.*)(\\p{Punct}?)(\\p{Punct}?)");
+                Matcher matcher = pattern.matcher(u);
+                if (matcher.find()) {
+                    builder.with(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5));
+                }
+            }
+            List<User> users = userRepository.findAll(builder.build());
+            return PageResponse.builder()
+                    .pageNo(pageable.getPageNumber())
+                    .pageSize(pageable.getPageSize())
+                    .totalPage(0)
+                    .items(users)
+                    .build();
+        }
+
+        Page<User> users = userRepository.findAll(pageable);
+        return PageResponse.builder()
+                .pageNo(pageable.getPageNumber())
+                .pageSize(pageable.getPageSize())
+                .totalPage(users.getTotalPages())
+                .items(users.stream().toList())
+                .build();
+    }
+
+    private List<Score> convertToScore(List<ScoreDTO> scoreDTOList, User user) {
         List<Score> scoreList = new ArrayList<>();
-        scoreDTOList.forEach(a ->
-                scoreList.add(Score.builder()
-                        .scoreValue(a.getScore())
-                        .build())
-        );
+        scoreDTOList.forEach(a -> {
+            Score score = Score.builder()
+                    .scoreValue(a.getScore())
+                    .build();
+            score.setUser(user);
+            scoreList.add(score);
+        });
         return scoreList;
     }
+
 
     private User getUserById(long userId) {
         return userRepository

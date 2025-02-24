@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -109,6 +110,34 @@ public class UserController {
             log.info("error message={}", e.getMessage(), e.getCause());
             return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get users by filtering fail: " + e.getMessage());
         }
+    }
 
+    @GetMapping("/get-list-user-use-advance-search-by-criteria")
+    @Operation(summary = "Get users by filtering", description = "API get users use advance search by criteria")
+    public ResponseData<PageResponse<?>> advanceSearchByCriteria(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @RequestParam(defaultValue = "", required = false) String sortBy,
+            @RequestParam(defaultValue = "", required = false) String score,
+            @RequestParam(defaultValue = "", required = false) String... search) {
+        log.info("Get users use advance search by criteria");
+        try {
+            return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
+                    userService.advanceSearchByCriteria(pageNo, pageSize, sortBy, score, search));
+        } catch (ResourceNotFoundException e) {
+            log.info("error message={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get users by filtering fail: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-list-user-with-specification")
+    @Operation(summary = "Get users with specification", description = "API get users with specification")
+    public ResponseData<PageResponse<?>> searchWithSpecification(
+            Pageable pageable,
+            @RequestParam(required = false) String[] user,
+            @RequestParam(required = false) String[] score){
+        log.info("Get users with specification");
+        return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
+                userService.searchWithSpecification(pageable, user, score));
     }
 }

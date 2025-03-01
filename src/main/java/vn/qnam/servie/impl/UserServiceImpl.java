@@ -149,11 +149,8 @@ public class UserServiceImpl implements UserService{
     @Override
     public PageResponse<?> searchWithSpecification(Pageable pageable, String[] user, String[] score) {
         if (user != null && score != null) {
-
+            return filterRepository.getUsersJoinedScores(pageable, user, score);
         } else if (user != null) {
-            /*Specification<User> spec = UserSpec.hasFirstName("N");
-            Specification<User> genderSpec = UserSpec.equalGender(Gender.MALE);
-            Specification<User> finalSpec = spec.and(genderSpec);*/
             UserSpecificationBuilder builder = new UserSpecificationBuilder();
             for (String u : user) {
                 Pattern pattern = Pattern.compile("(\\w+?)([<:>~!])(.*)(\\p{Punct}?)(\\p{Punct}?)");
@@ -162,21 +159,18 @@ public class UserServiceImpl implements UserService{
                     builder.with(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5));
                 }
             }
-            List<User> users = userRepository.findAll(builder.build());
             return PageResponse.builder()
                     .pageNo(pageable.getPageNumber())
                     .pageSize(pageable.getPageSize())
                     .totalPage(0)
-                    .items(users)
+                    .items(userRepository.findAll(builder.build()))
                     .build();
         }
-
-        Page<User> users = userRepository.findAll(pageable);
         return PageResponse.builder()
                 .pageNo(pageable.getPageNumber())
                 .pageSize(pageable.getPageSize())
-                .totalPage(users.getTotalPages())
-                .items(users.stream().toList())
+                .totalPage(0)
+                .items(userRepository.findAll(pageable).stream().toList())
                 .build();
     }
 

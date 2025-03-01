@@ -13,6 +13,7 @@ import vn.qnam.model.Score;
 import vn.qnam.model.User;
 import vn.qnam.repository.criteria.SearchCriteria;
 import vn.qnam.repository.criteria.UserSearchCriteriaConsumer;
+import vn.qnam.repository.specification.SpecSearchCriteria;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -161,5 +162,89 @@ public class FilterRepository {
 
 
         return entityManager.createQuery(query).getSingleResult();
+    }
+
+    public PageResponse<?> getUsersJoinedScores(Pageable pageable, String[] user, String[] score) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
+        Root<User> root = query.from(User.class);
+        Join<Score, User> scoreUserJoin = root.join("scoresList");
+
+        //build query
+        List<Predicate> userPredicate = new ArrayList<>();
+        List<Predicate> scorePredicate = new ArrayList<>();
+
+        Pattern pattern = Pattern.compile("(\\w+?)([<:>~!])(.*)(\\p{Punct}?)(\\p{Punct}?)");
+        for (String u : user) {
+            Matcher matcher = pattern.matcher(u);
+            if (matcher.find()) {
+                SpecSearchCriteria specSearchCriteria = new SpecSearchCriteria(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5));
+                Predicate predicate = toPredicate(root, criteriaBuilder, specSearchCriteria);
+                userPredicate.add(predicate);
+            }
+        }
+
+        for (String sc : score) {
+            Matcher matcher = pattern.matcher(sc);
+            if (matcher.find()) {
+                SpecSearchCriteria specSearchCriteria = new SpecSearchCriteria(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5));
+                Predicate predicate = toPredicate(scoreUserJoin, criteriaBuilder, specSearchCriteria);
+                scorePredicate.add(predicate);
+            }
+        }
+        Predicate userPre = criteriaBuilder.or(userPredicate.toArray(new Predicate[0]));
+        Predicate scorePre = criteriaBuilder.or(scorePredicate.toArray(new Predicate[0]));
+        Predicate finalPre = criteriaBuilder.and(userPre, scorePre);
+        query.where(finalPre);
+
+        if (pageable.getSort().isSorted()) {
+            List<Order> orders = new ArrayList<>();
+            pageable.getSort().forEach(order -> {
+                if (order.isAscending()) {
+                    orders.add(criteriaBuilder.asc(root.get(order.getProperty())));
+                } else {
+                    orders.add(criteriaBuilder.desc(root.get(order.getProperty())));
+                }
+            });
+            query.orderBy(orders);
+        }
+
+        List<User> users = entityManager.createQuery(query)
+                .setFirstResult(pageable.getPageNumber())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        return PageResponse.builder()
+                .pageSize(pageable.getPageSize())
+                .pageNo(pageable.getPageNumber())
+                .totalPage(1000)
+                .items(users)
+                .build();
+    }
+
+    public Predicate toPredicate(Root<User> root, CriteriaBuilder criteriaBuilder, SpecSearchCriteria specSearchCriteria) {
+        return switch (specSearchCriteria.getSearchOperation()) {
+            case EQUALITY -> criteriaBuilder.equal(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue());
+            case NEGATION -> criteriaBuilder.notEqual(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue());
+            case GREATER_THAN -> criteriaBuilder.greaterThan(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue().toString());
+            case LESS_THAN -> criteriaBuilder.lessThan(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue().toString());
+            case LIKE -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString() + "%");
+            case STARTS_WITH -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue() + "%");
+            case ENDS_WITH -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString());
+            case CONTAINS -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString() + "%");
+        };
+    }
+
+    public Predicate toPredicate(Join<Score, User> root, CriteriaBuilder criteriaBuilder, SpecSearchCriteria specSearchCriteria) {
+        return switch (specSearchCriteria.getSearchOperation()) {
+            case EQUALITY -> criteriaBuilder.equal(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue());
+            case NEGATION -> criteriaBuilder.notEqual(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue());
+            case GREATER_THAN -> criteriaBuilder.greaterThan(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue().toString());
+            case LESS_THAN -> criteriaBuilder.lessThan(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue().toString());
+            case LIKE -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString() + "%");
+            case STARTS_WITH -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), specSearchCriteria.getValue() + "%");
+            case ENDS_WITH -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString());
+            case CONTAINS -> criteriaBuilder.like(root.get(specSearchCriteria.getKey()), "%" + specSearchCriteria.getValue().toString() + "%");
+        };
     }
 }

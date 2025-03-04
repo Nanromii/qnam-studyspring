@@ -20,8 +20,6 @@ import vn.qnam.exception.ResourceNotFoundException;
 import vn.qnam.servie.UserService;
 import vn.qnam.util.UserStatus;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/user")
 @Validated

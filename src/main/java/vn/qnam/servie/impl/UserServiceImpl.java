@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.PageResponse;
 import vn.qnam.dto.reponse.UserDetailResponse;
@@ -17,10 +19,8 @@ import vn.qnam.model.Score;
 import vn.qnam.model.User;
 import vn.qnam.repository.FilterRepository;
 import vn.qnam.repository.UserRepository;
-import vn.qnam.repository.specification.UserSpec;
 import vn.qnam.repository.specification.UserSpecificationBuilder;
 import vn.qnam.servie.UserService;
-import vn.qnam.util.Gender;
 import vn.qnam.util.Type;
 import vn.qnam.util.UserStatus;
 
@@ -39,6 +39,8 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public long addUser(UserRequestDTO userRequestDTO) {
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+
         User user = User.builder()
                 .firstName(userRequestDTO.getFirstName())
                 .lastName(userRequestDTO.getLastName())
@@ -47,7 +49,7 @@ public class UserServiceImpl implements UserService{
                 .email(userRequestDTO.getEmail())
                 .gender(userRequestDTO.getGender())
                 .userName(userRequestDTO.getUsername())
-                .password(userRequestDTO.getPassword())
+                .password(passwordEncoder.encode(userRequestDTO.getPassword()))
                 .status(userRequestDTO.getStatus())
                 .type(Type.valueOf(userRequestDTO.getType().toUpperCase()))
                 .build();

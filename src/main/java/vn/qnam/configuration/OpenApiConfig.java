@@ -27,7 +27,7 @@ public class OpenApiConfig {
                     .description(description)
                     .version(version)
                     .license(new License()
-                            .name("API license").url("http://domain.vn/license")))
+                            .name("API license").url("https://domain.vn/license")))
                 .servers(List.of(new Server().url(serverUrl).description(serverName)));
     }
 

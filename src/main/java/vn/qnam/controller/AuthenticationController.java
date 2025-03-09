@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.ResponseData;
 import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.request.AuthenticationDTO;
@@ -29,18 +30,23 @@ public class AuthenticationController {
     private final AuthenticationService authService;
 
     @PostMapping("/log-in")
-    public ResponseData<?> authenticate(@RequestBody AuthenticationDTO authDTO) {
+    public ResponseData<AuthenticationResponse> authenticate(@RequestBody AuthenticationDTO authDTO) {
         try {
-            log.info("Authenticate successfully.");
-            return new ResponseData<>(HttpStatus.OK.value(), "Authenticate successfully", authService.authenticated(authDTO));
+            AuthenticationResponse authResponse = authService.authenticated(authDTO);
+            log.info("Authenticate successfully for user: {}", authDTO.getUserName());
+            if (!authResponse.isAuthenticated()) {
+                return new ResponseError<>(HttpStatus.UNAUTHORIZED.value(), "Invalid credentials");
+            }
+            return new ResponseData<>(HttpStatus.OK.value(), "Authenticated successfully", authResponse);
         } catch (NoSuchElementException e) {
             log.error("User not found: {}", authDTO.getUserName(), e);
-            return new ResponseError<>(HttpStatus.NOT_FOUND.value(), "User not found.");
+            return new ResponseData<>(HttpStatus.NOT_FOUND.value(), "User not found", null);
         } catch (Exception e) {
-            log.error("Unexpected error during authentication", e);
-            return new ResponseError<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Authentication error.");
+            log.error("Unexpected error during authentication for user: {}", authDTO.getUserName(), e);
+            return new ResponseError<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Authentication error");
         }
     }
+
 
     @PostMapping("/introspect")
     public ResponseData<?> authenticate(@RequestBody IntrospectRequest introspectRequest) throws ParseException, JOSEException {

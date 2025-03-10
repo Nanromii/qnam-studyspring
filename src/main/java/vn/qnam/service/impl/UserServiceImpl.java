@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.PageResponse;
@@ -91,9 +93,25 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
+    public UserDetailResponse getMyInfo() {
+        SecurityContext context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+        User user = userRepository.findUserByUserName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("User with userName ={" + name + "} not exists"));
+        return UserDetailResponse.builder()
+                .userName(user.getUserName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .build();
+    }
+
+    @Override
     public UserDetailResponse getUser(long userId) {
         User user = getUserById(userId);
         return UserDetailResponse.builder()
+                .userName(user.getUserName())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
@@ -121,6 +139,7 @@ public class UserServiceImpl implements UserService{
         Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(orders));
         Page<User> allUsers = userRepository.findAll(pageable);
         List<UserDetailResponse> userDetailResponseList = allUsers.stream().map(user -> UserDetailResponse.builder()
+                .userName(user.getUserName())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())

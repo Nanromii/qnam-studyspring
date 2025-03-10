@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
@@ -20,7 +22,6 @@ import vn.qnam.dto.reponse.UserDetailResponse;
 import vn.qnam.dto.request.UserRequestDTO;
 import vn.qnam.exception.ResourceNotFoundException;
 import vn.qnam.service.UserService;
-import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 @RestController
@@ -67,6 +68,11 @@ public class UserController {
 
     @GetMapping("/{userId}")
     @Operation(summary = "Get user", description = "API get user")
+    //@PostAuthorize("hasRole('ADMIN')") //Sau khi vào method, lấy data, nếu kiểm tra mà role không thỏa mãn thì sẽ bị chặn và không trả về data
+
+    /*Nếu userName của người lấy data chính là userName của data thì cho lấy, tức là chỉ được phép lấy data của chính mình
+    ADMIN có thể lấy data của bất cứ user nào*/
+    @PostAuthorize("returnObject.data.userName == authentication.name or hasRole('ADMIN')")
     public ResponseData<UserDetailResponse> getUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId) {
         log.info("Request get user with userId={}", userId);
         try {
@@ -78,11 +84,25 @@ public class UserController {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get user fail. " + e.getMessage());
         }
+    }
 
+    @GetMapping("/myinfo")
+    public ResponseData<UserDetailResponse> getMyInfo() {
+        log.info("Request get my info");
+        try {
+            UserDetailResponse userDetailResponse = userService.getMyInfo();
+            return new ResponseData<>(HttpStatus.OK.value(),
+                    Translator.toLocale("user.getUser.success"),
+                    userDetailResponse);
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get user fail. " + e.getMessage());
+        }
     }
 
     @GetMapping("/list")
     @Operation(summary = "Get list of user", description = "API get list user")
+    @PreAuthorize("hasRole('ADMIN')") //Nếu không phải role ID thì user bị chặn trước khi vào method
     public ResponseData<PageResponse<?>> getAllUsers(
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
@@ -109,6 +129,7 @@ public class UserController {
             @RequestParam(defaultValue = "10", required = false) int pageSize,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sortBy) {
+
         log.info("Get users by filtering");
         try {
             return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"), userService.getUsersByFiltering(pageNo, pageSize, search, sortBy));
@@ -126,6 +147,7 @@ public class UserController {
             @RequestParam(defaultValue = "", required = false) String sortBy,
             @RequestParam(defaultValue = "", required = false) String score,
             @RequestParam(defaultValue = "", required = false) String... search) {
+
         log.info("Get users use advance search by criteria");
         try {
             return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
@@ -142,6 +164,7 @@ public class UserController {
             Pageable pageable,
             @RequestParam(required = false) String[] user,
             @RequestParam(required = false) String[] score){
+
         log.info("Get users with specification");
         return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
                 userService.searchWithSpecification(pageable, user, score));

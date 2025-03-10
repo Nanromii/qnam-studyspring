@@ -11,6 +11,7 @@ public interface UserService {
     void updateUser(long userId, UserRequestDTO requestDTO);
     void deleteUser(long userId);
     void changeUser(long userId, UserStatus userStatus);
+    UserDetailResponse getMyInfo();
     UserDetailResponse getUser(long userId);
     PageResponse<?> getAllUser(int pageNo, int pageSize, String... sorts);
     PageResponse<?> getUsersByFiltering(int pageNo, int pageSize, String search, String sortBy);

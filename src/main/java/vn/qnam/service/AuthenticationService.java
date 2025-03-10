@@ -1,4 +1,4 @@
-package vn.qnam.servie;
+package vn.qnam.service;
 
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -15,6 +15,7 @@ import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.IntrospectResponse;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectRequest;
+import vn.qnam.model.User;
 import vn.qnam.repository.UserRepository;
 
 import java.nio.charset.StandardCharsets;
@@ -37,19 +38,19 @@ public class AuthenticationService {
         var user = userRepository.findUserByUserName(authenticationDTO.getUserName())
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-
         //mat khau goc truyen vao truoc mat sau ma hoa
         boolean authenticated = encoder.matches(authenticationDTO.getPassword(), user.getPassword());
-        var token = generateToken(authenticationDTO.getUserName());
+        var token = generateToken(user);
         return new AuthenticationResponse(authenticated, token);
     }
 
-    private String generateToken(String userName) {
+    private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(userName)
+                .subject(user.getUserName())
                 .issuer("vnqnam.com")
                 .issueTime(new Date())
+                .claim("Scope", user.getScope())
                 .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());

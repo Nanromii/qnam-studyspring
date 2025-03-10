@@ -42,7 +42,7 @@ public class UserRequestDTO implements Serializable {
     private Gender gender;
 
     @NotNull(message = "type must be not null")
-    @EnumValue(name = "type", enumClass = Type.class)
+    @EnumValue(name = "type", enumClass = Scope.class)
     private String type;
 
     @NotNull(message = "username must be not null")

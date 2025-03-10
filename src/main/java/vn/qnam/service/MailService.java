@@ -1,4 +1,4 @@
-package vn.qnam.servie;
+package vn.qnam.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;

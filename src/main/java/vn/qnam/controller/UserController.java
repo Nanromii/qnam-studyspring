@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import vn.qnam.configuration.Translator;
@@ -17,7 +19,8 @@ import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.reponse.UserDetailResponse;
 import vn.qnam.dto.request.UserRequestDTO;
 import vn.qnam.exception.ResourceNotFoundException;
-import vn.qnam.servie.UserService;
+import vn.qnam.service.UserService;
+import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 @RestController
@@ -84,7 +87,12 @@ public class UserController {
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String... sorts) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("userName={}", authentication.getName());
+        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
         log.info("Get all users from {} to {}", pageNo, pageSize);
+
         try {
             return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.getListUser.success"),
                     userService.getAllUser(pageNo, pageSize, sorts));

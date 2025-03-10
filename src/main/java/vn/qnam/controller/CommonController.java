@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import vn.qnam.dto.reponse.ResponseData;
 import vn.qnam.dto.reponse.ResponseError;
-import vn.qnam.servie.MailService;
+import vn.qnam.service.MailService;
 
 @RestController
 @RequiredArgsConstructor

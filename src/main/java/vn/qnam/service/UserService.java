@@ -1,12 +1,10 @@
-package vn.qnam.servie;
+package vn.qnam.service;
 
 import org.springframework.data.domain.Pageable;
 import vn.qnam.dto.reponse.PageResponse;
 import vn.qnam.dto.reponse.UserDetailResponse;
 import vn.qnam.dto.request.UserRequestDTO;
 import vn.qnam.util.UserStatus;
-
-import java.util.List;
 
 public interface UserService {
     long addUser(UserRequestDTO userRequestDTO);

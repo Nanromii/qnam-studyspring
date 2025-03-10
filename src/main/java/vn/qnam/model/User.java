@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.qnam.util.Gender;
-import vn.qnam.util.Type;
+import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 import java.util.ArrayList;
@@ -52,8 +52,8 @@ public class User extends AbstractEntity {
 
     @Enumerated(EnumType.STRING)
     //@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "type")
-    private Type type;
+    @Column(name = "role")
+    private Scope scope;
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")

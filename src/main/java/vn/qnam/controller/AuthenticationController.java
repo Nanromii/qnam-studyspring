@@ -15,7 +15,7 @@ import vn.qnam.dto.reponse.ResponseData;
 import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectRequest;
-import vn.qnam.servie.AuthenticationService;
+import vn.qnam.service.AuthenticationService;
 
 import java.text.ParseException;
 import java.util.NoSuchElementException;

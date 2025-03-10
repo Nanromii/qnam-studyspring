@@ -1,4 +1,4 @@
-package vn.qnam.servie.impl;
+package vn.qnam.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,8 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.PageResponse;
@@ -20,8 +18,8 @@ import vn.qnam.model.User;
 import vn.qnam.repository.FilterRepository;
 import vn.qnam.repository.UserRepository;
 import vn.qnam.repository.specification.UserSpecificationBuilder;
-import vn.qnam.servie.UserService;
-import vn.qnam.util.Type;
+import vn.qnam.service.UserService;
+import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 import java.util.ArrayList;
@@ -36,11 +34,10 @@ public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final FilterRepository filterRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public long addUser(UserRequestDTO userRequestDTO) {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-
         User user = User.builder()
                 .firstName(userRequestDTO.getFirstName())
                 .lastName(userRequestDTO.getLastName())
@@ -51,7 +48,7 @@ public class UserServiceImpl implements UserService{
                 .userName(userRequestDTO.getUsername())
                 .password(passwordEncoder.encode(userRequestDTO.getPassword()))
                 .status(userRequestDTO.getStatus())
-                .type(Type.valueOf(userRequestDTO.getType().toUpperCase()))
+                .scope(Scope.valueOf(userRequestDTO.getType().toUpperCase()))
                 .build();
         userRequestDTO.getScore().forEach(a ->
                 user.saveScore(Score.builder().scoreValue(a.getScore()).build()));
@@ -73,7 +70,7 @@ public class UserServiceImpl implements UserService{
         user.setUserName(requestDTO.getUsername());
         user.setPassword(requestDTO.getPassword());
         user.setStatus(requestDTO.getStatus());
-        user.setType(Type.valueOf(requestDTO.getType().toUpperCase()));
+        user.setScope(Scope.valueOf(requestDTO.getType().toUpperCase()));
         user.setScoresList(convertToScore(requestDTO.getScore(), user));
         userRepository.save(user);
         log.info("User has updated successfully, userId={}", userId);

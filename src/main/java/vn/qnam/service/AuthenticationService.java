@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.IntrospectResponse;
 import vn.qnam.dto.request.AuthenticationDTO;
-import vn.qnam.dto.request.IntrospectRequest;
+import vn.qnam.dto.request.IntrospectDTO;
 import vn.qnam.model.User;
 import vn.qnam.repository.UserRepository;
 
@@ -64,7 +64,7 @@ public class AuthenticationService {
         }
     }
 
-    public IntrospectResponse introspect(IntrospectRequest introspectRequest) throws JOSEException, ParseException {
+    public IntrospectResponse introspect(IntrospectDTO introspectRequest) throws JOSEException, ParseException {
         var token = introspectRequest.getToken();
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);

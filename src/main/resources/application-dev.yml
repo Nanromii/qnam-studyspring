@@ -9,6 +9,10 @@ spring:
     username: root
     password: nam9mgchanh
     driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 open:
   api:
     title: ${API_TITLE:DUMMY-API-TITLE}

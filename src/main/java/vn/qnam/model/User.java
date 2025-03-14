@@ -54,6 +54,8 @@ public class User extends AbstractEntity {
     //@JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "role")
     private Scope scope;
+    /*Thuc te nen dung Set<Scope> vi 1 USER co the co nhieu SCOPE (ManyToMany),
+    tuy nhien o day se demo 1 USER 1 ROLE (ManyToOne)*/
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")

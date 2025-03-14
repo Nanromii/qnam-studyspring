@@ -1,7 +1,9 @@
 package vn.qnam.dto.reponse;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
 
+@Getter
 public class ResponseData<T>{
     private final int status;
     private final String message;

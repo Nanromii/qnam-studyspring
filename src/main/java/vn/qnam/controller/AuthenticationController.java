@@ -14,7 +14,7 @@ import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.ResponseData;
 import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.request.AuthenticationDTO;
-import vn.qnam.dto.request.IntrospectRequest;
+import vn.qnam.dto.request.IntrospectDTO;
 import vn.qnam.service.AuthenticationService;
 
 import java.text.ParseException;
@@ -49,7 +49,7 @@ public class AuthenticationController {
 
 
     @PostMapping("/introspect")
-    public ResponseData<?> authenticate(@RequestBody IntrospectRequest introspectRequest) throws ParseException, JOSEException {
+    public ResponseData<?> authenticate(@RequestBody IntrospectDTO introspectRequest) throws ParseException, JOSEException {
         var result = authService.introspect(introspectRequest);
         return new ResponseData<>(HttpStatus.OK.value(), "Authenticate successfully", result);
     }

@@ -11,10 +11,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.IntrospectResponse;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectDTO;
+import vn.qnam.model.Role;
 import vn.qnam.model.User;
 import vn.qnam.repository.UserRepository;
 
@@ -22,8 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +52,7 @@ public class AuthenticationService {
                 .subject(user.getUserName())
                 .issuer("vnqnam.com")
                 .issueTime(new Date())
-                .claim("Scope", user.getScope())
+                .claim("Scope", buildScope(user))
                 .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -73,5 +75,23 @@ public class AuthenticationService {
         return IntrospectResponse.builder()
                 .valid(verified && expiryTime.after(new Date()))
                 .build();
+    }
+
+    private List<String> buildScope(User user) {
+        List<String> scopes = new ArrayList<>();
+        if (StringUtils.hasLength(user.getRole().toString())) {
+            /*
+                !CollectionUtils.isEmpty(user.getRole()) de join cac role lai,
+                tuy nhien o demo nay dang de role la Role chu khong phai Set<Role>
+                nen dung StringUtils.hasLength
+            */
+
+            Role role = user.getRole();
+            scopes.add("ROLE_" + role.getName());
+            if (!CollectionUtils.isEmpty(role.getPermissions())) {
+                role.getPermissions().forEach(permission -> scopes.add(permission.getName()));
+            }
+        }
+        return scopes;
     }
 }

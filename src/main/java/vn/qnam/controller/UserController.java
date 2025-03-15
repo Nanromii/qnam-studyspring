@@ -50,12 +50,16 @@ public class UserController {
     @Operation(summary = "Update User", description = "API update user")
     @PutMapping("/{userId}")
     public ResponseData<?> updateUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId, @Valid @RequestBody UserRequestDTO userDTO) {
-        return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.update.success"));
+        userService.updateUser(userId, userDTO);
+        return new ResponseData<>(
+                HttpStatus.ACCEPTED.value(),
+                Translator.toLocale("user.update.success"));
     }
 
     @PatchMapping("/{userId}")
     @Operation(summary = "Change user status", description = "API change user status")
     public ResponseData<?> changeStatus(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId, @RequestParam UserStatus status) {
+        userService.changeUser(userId, status);
         return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.changeStatus.success"));
     }
 
@@ -63,6 +67,7 @@ public class UserController {
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseData<?> deleteUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId) {
+        userService.deleteUser(userId);
         return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.del.success"));
     }
 
@@ -103,6 +108,14 @@ public class UserController {
     @GetMapping("/list")
     @Operation(summary = "Get list of user", description = "API get list user")
     @PreAuthorize("hasRole('ADMIN')") //Nếu không phải role ID thì user bị chặn trước khi vào method
+    /*
+    * Sau khi chinh sua thi hasRole('APPROVE POST') se khong goi duoc API getAllUSers boi vi
+    * ban chat hasRole('APPROVE POST') = ROLE_APPROVE POST nhung trong Scope cua Jwt chi co APPROVE POST
+    * muon su dung cac permission giong nhu APPROVE POST de truy cap API thi viec chung ta can lam la
+    * them @PreAuthorize("hasAuthority('APPROVE POST')") vi doi khi nhieu Role khac nhau co the co cung 1 permission
+    * vi du ADMIN co CREATE POST va USER cung co thi ta su dung hasAuthority se linh hoat hon la dung
+    * hasRole('ADMIN') or hasRole('USER')
+    */
     public ResponseData<PageResponse<?>> getAllUsers(
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,

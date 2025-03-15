@@ -41,15 +41,18 @@ public class UserRequestDTO implements Serializable {
     @GenderSubset(anyOf = {MALE, FEMALE, OTHER})
     private Gender gender;
 
-    @NotNull(message = "type must be not null")
+    /*@NotNull(message = "type must be not null")
     @EnumValue(name = "type", enumClass = Scope.class)
-    private String type;
+    private String type;*/
 
     @NotNull(message = "username must be not null")
     private String username;
 
     @NotNull(message = "password must be not null")
     private String password;
+
+    @NotNull(message = "role must be not null")
+    private String role;
 
     public UserRequestDTO(String firstName, String lastName, String email, String phone) {
         this.firstName = firstName;

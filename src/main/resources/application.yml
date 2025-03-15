@@ -3,6 +3,16 @@ spring:
     name: "qnam-studyspring"
   profiles:
     active: ${MY_ACTIVE_PROFILE:dev}
+  datasource:
+    url: jdbc:mysql://localhost:3306/springdemo
+    username: root
+    password: nam9mgchanh
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
 
 jwt:
   signerKey: "tiq8ysiqcvKdfCRt+cPn/OYrTfrXXPA4x7Fp9nwm0UI2e8HCffQvHTRlloe9KkBKJibIDM5gv+AcdUZj3Jp8YCUN7gwwXUZk1jMUBHzIBY0="

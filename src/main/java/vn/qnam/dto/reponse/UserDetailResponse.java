@@ -15,4 +15,5 @@ public class UserDetailResponse implements Serializable {
     private String lastName;
     private String email;
     private String phone;
+    private RoleResponse role;
 }

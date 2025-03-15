@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.qnam.util.Gender;
-import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 import java.util.ArrayList;
@@ -51,11 +50,10 @@ public class User extends AbstractEntity {
     private UserStatus status;
 
     @Enumerated(EnumType.STRING)
-    //@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "role")
-    private Scope scope;
+    @ManyToOne
+    private Role role;
     /*Thuc te nen dung Set<Scope> vi 1 USER co the co nhieu SCOPE (ManyToMany),
-    tuy nhien o day se demo 1 USER 1 ROLE (ManyToOne)*/
+    tuy nhien o day se demo nhieu USER 1 ROLE (ManyToOne)*/
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")

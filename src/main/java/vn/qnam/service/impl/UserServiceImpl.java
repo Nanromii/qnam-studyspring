@@ -11,23 +11,26 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.qnam.dto.reponse.PageResponse;
+import vn.qnam.dto.reponse.PermissionResponse;
+import vn.qnam.dto.reponse.RoleResponse;
 import vn.qnam.dto.reponse.UserDetailResponse;
 import vn.qnam.dto.request.ScoreDTO;
 import vn.qnam.dto.request.UserRequestDTO;
 import vn.qnam.exception.ResourceNotFoundException;
+import vn.qnam.model.Role;
 import vn.qnam.model.Score;
 import vn.qnam.model.User;
 import vn.qnam.repository.FilterRepository;
 import vn.qnam.repository.UserRepository;
 import vn.qnam.repository.specification.UserSpecificationBuilder;
 import vn.qnam.service.UserService;
-import vn.qnam.util.Scope;
 import vn.qnam.util.UserStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -50,7 +53,7 @@ public class UserServiceImpl implements UserService{
                 .userName(userRequestDTO.getUsername())
                 .password(passwordEncoder.encode(userRequestDTO.getPassword()))
                 .status(userRequestDTO.getStatus())
-                .scope(Scope.valueOf(userRequestDTO.getType().toUpperCase()))
+                .role(Role.builder().name(userRequestDTO.getRole()).build())
                 .build();
         userRequestDTO.getScore().forEach(a ->
                 user.saveScore(Score.builder().scoreValue(a.getScore()).build()));
@@ -70,9 +73,9 @@ public class UserServiceImpl implements UserService{
         user.setEmail(requestDTO.getEmail());
         user.setGender(requestDTO.getGender());
         user.setUserName(requestDTO.getUsername());
-        user.setPassword(requestDTO.getPassword());
+        user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
         user.setStatus(requestDTO.getStatus());
-        user.setScope(Scope.valueOf(requestDTO.getType().toUpperCase()));
+        user.setRole(Role.builder().name(requestDTO.getRole()).build());
         user.setScoresList(convertToScore(requestDTO.getScore(), user));
         userRepository.save(user);
         log.info("User has updated successfully, userId={}", userId);
@@ -104,6 +107,16 @@ public class UserServiceImpl implements UserService{
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .role(RoleResponse.builder()
+                        .name(user.getRole().getName())
+                        .description(user.getRole().getDescription())
+                        .permissions(user.getRole().getPermissions().stream()
+                                        .map(a -> PermissionResponse.builder()
+                                                .name(a.getName())
+                                                .description(a.getDescription())
+                                                .build())
+                                        .collect(Collectors.toSet()))
+                        .build())
                 .build();
     }
 
@@ -116,6 +129,16 @@ public class UserServiceImpl implements UserService{
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .role(RoleResponse.builder()
+                        .name(user.getRole().getName())
+                        .description(user.getRole().getDescription())
+                        .permissions(user.getRole().getPermissions().stream()
+                                .map(a -> PermissionResponse.builder()
+                                        .name(a.getName())
+                                        .description(a.getDescription())
+                                        .build())
+                                .collect(Collectors.toSet()))
+                        .build())
                 .build();
     }
 
@@ -144,6 +167,16 @@ public class UserServiceImpl implements UserService{
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .role(RoleResponse.builder()
+                        .name(user.getRole().getName())
+                        .description(user.getRole().getDescription())
+                        .permissions(user.getRole().getPermissions().stream()
+                                .map(a -> PermissionResponse.builder()
+                                        .name(a.getName())
+                                        .description(a.getDescription())
+                                        .build())
+                                .collect(Collectors.toSet()))
+                        .build())
                 .build()).toList();
 
         return PageResponse.builder()

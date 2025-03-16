@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.qnam.dto.reponse.PageResponse;
 import vn.qnam.dto.reponse.PermissionResponse;
 import vn.qnam.dto.reponse.RoleResponse;
@@ -120,6 +121,7 @@ public class UserServiceImpl implements UserService{
                 .build();
     }
 
+    @Transactional
     @Override
     public UserDetailResponse getUser(long userId) {
         User user = getUserById(userId);

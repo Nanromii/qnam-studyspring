@@ -11,14 +11,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import vn.qnam.dto.reponse.AuthenticationResponse;
 import vn.qnam.dto.reponse.IntrospectResponse;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectDTO;
+import vn.qnam.dto.request.LogoutDTO;
+import vn.qnam.model.InvalidatedToken;
 import vn.qnam.model.Role;
 import vn.qnam.model.User;
+import vn.qnam.repository.InvalidatedRepository;
 import vn.qnam.repository.UserRepository;
 
 import java.nio.charset.StandardCharsets;
@@ -32,10 +36,12 @@ import java.util.*;
 @Slf4j
 public class AuthenticationService {
     private final UserRepository userRepository;
+    private final InvalidatedRepository invalidatedRepository;
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
     PasswordEncoder encoder = new BCryptPasswordEncoder(10);
 
+    @Transactional
     public AuthenticationResponse authenticated(AuthenticationDTO authenticationDTO) {
         var user = userRepository.findUserByUserName(authenticationDTO.getUserName())
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
@@ -54,6 +60,7 @@ public class AuthenticationService {
                 .issueTime(new Date())
                 .claim("Scope", buildScope(user))
                 .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .jwtID(UUID.randomUUID().toString())
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(header, payload);
@@ -66,14 +73,16 @@ public class AuthenticationService {
         }
     }
 
-    public IntrospectResponse introspect(IntrospectDTO introspectRequest) throws JOSEException, ParseException {
+    public IntrospectResponse introspect(IntrospectDTO introspectRequest) throws ParseException {
         var token = introspectRequest.getToken();
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
-        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-        var verified = signedJWT.verify(verifier);
+        boolean isValid = true;
+        try {
+            verifyToken(token);
+        } catch (JOSEException  | SecurityException e) {
+            isValid = false;
+        }
         return IntrospectResponse.builder()
-                .valid(verified && expiryTime.after(new Date()))
+                .valid(isValid)
                 .build();
     }
 
@@ -93,5 +102,27 @@ public class AuthenticationService {
             }
         }
         return scopes;
+    }
+
+    public void logout(LogoutDTO request) throws ParseException, JOSEException {
+        SignedJWT signedJWT = verifyToken(request.getToken());
+        String jid = signedJWT.getJWTClaimsSet().getJWTID();
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder().id(jid).expiryTime(expiryTime).build();
+        invalidatedRepository.save(invalidatedToken);
+    }
+
+    private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        var verified = signedJWT.verify(verifier);
+        if (!(verified && expiryTime.after(new Date()))) {
+            throw new JOSEException("JWT token is invalid or expired.");
+        }
+        if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+            throw new SecurityException("Unauthenticated");
+        }
+        return signedJWT;
     }
 }

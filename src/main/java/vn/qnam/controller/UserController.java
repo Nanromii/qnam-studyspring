@@ -85,7 +85,7 @@ public class UserController {
             return new ResponseData<>(HttpStatus.OK.value(),
                     Translator.toLocale("user.getUser.success"),
                     userDetailResponse);
-        } catch (ResourceNotFoundException e) {
+        } catch (Exception e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Get user fail. " + e.getMessage());
         }

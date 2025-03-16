@@ -15,6 +15,7 @@ import vn.qnam.dto.reponse.ResponseData;
 import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectDTO;
+import vn.qnam.dto.request.LogoutDTO;
 import vn.qnam.service.AuthenticationService;
 
 import java.text.ParseException;
@@ -52,5 +53,17 @@ public class AuthenticationController {
     public ResponseData<?> authenticate(@RequestBody IntrospectDTO introspectRequest) throws ParseException, JOSEException {
         var result = authService.introspect(introspectRequest);
         return new ResponseData<>(HttpStatus.OK.value(), "Authenticate successfully", result);
+    }
+
+    @PostMapping("/log-out")
+    public ResponseData<?> logout(@RequestBody LogoutDTO request) {
+        try {
+            authService.logout(request);
+            return new ResponseData<>(HttpStatus.OK.value(), "Log out completed.");
+        } catch (ParseException e) {
+            return new ResponseData<>(HttpStatus.BAD_REQUEST.value(), "Invalid request format: " + e.getMessage());
+        } catch (JOSEException e) {
+            return new ResponseData<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing JWT: " + e.getMessage());
+        }
     }
 }

@@ -6,10 +6,15 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import vn.qnam.model.InvalidatedToken;
 import vn.qnam.model.Role;
 import vn.qnam.model.User;
+import vn.qnam.repository.InvalidatedRepository;
 import vn.qnam.repository.UserRepository;
 import vn.qnam.util.Scope;
+
+import java.util.Date;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -18,8 +23,14 @@ public class ApplicationInitConfig {
     private final PasswordEncoder passwordEncoder;
 
     @Bean
-    protected ApplicationRunner applicationRunner(UserRepository userRepository) {
+    protected ApplicationRunner applicationRunner(UserRepository userRepository, InvalidatedRepository invalidatedRepository) {
         return args -> {
+            List<InvalidatedToken> expiredTokens = invalidatedRepository.findByExpiryTimeLessThan(new Date());
+            if (!expiredTokens.isEmpty()) {
+                invalidatedRepository.deleteAll(expiredTokens);
+                log.info("{} expired tokens have been removed.", expiredTokens.size());
+            }
+
             if (userRepository.findUserByUserName("admin").isEmpty()) {
                 User user = User.builder()
                         .firstName("admin")
@@ -30,6 +41,7 @@ public class ApplicationInitConfig {
                 userRepository.save(user);
                 log.warn("admin user has been created with default password: admin, please change it.");
             }
+
         };
     }
 }

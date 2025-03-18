@@ -96,6 +96,7 @@ public class UserServiceImpl implements UserService{
         log.info("User status has changed successfully, userId={}", userId);
     }
 
+    @Transactional
     @Override
     public UserDetailResponse getMyInfo() {
         SecurityContext context = SecurityContextHolder.getContext();

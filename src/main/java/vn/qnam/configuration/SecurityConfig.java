@@ -19,14 +19,14 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/user/",
-            "/auth/log-in", "/auth/introspect", "/auth/log-out"
+            "/auth/log-in", "/auth/introspect", "/auth/log-out", "/auth/refresh"
     };
 
     private final String[] PRIVATE_ENDPOINTS = {
             "/user/*",
             "/user/list",
-            "user/get-list-user-by-filtering",
-            "user/get-list-user-with-specification",
+            "/user/get-list-user-by-filtering",
+            "/user/get-list-user-with-specification",
             "/user/get-list-user-use-advance-search-by-criteria"
     };
 
@@ -40,14 +40,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+        httpSecurity.authorizeHttpRequests(request -> request
+                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         //.requestMatchers(HttpMethod.GET, PRIVATE_ENDPOINTS).hasRole(Scope.ADMIN.name())
                                                                             //.hasAuthority(HAS_AUTHORITY)
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(oauth2 ->
                 oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter())));

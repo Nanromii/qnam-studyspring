@@ -16,4 +16,6 @@ spring:
 
 jwt:
   signerKey: "tiq8ysiqcvKdfCRt+cPn/OYrTfrXXPA4x7Fp9nwm0UI2e8HCffQvHTRlloe9KkBKJibIDM5gv+AcdUZj3Jp8YCUN7gwwXUZk1jMUBHzIBY0="
-
+  valid-duration: 3600 #second
+  refreshable-duration: 36000 #second
+  #Tuy vao ung dung ma thoi gian ton tai cua token, refresh token it hay nhieu

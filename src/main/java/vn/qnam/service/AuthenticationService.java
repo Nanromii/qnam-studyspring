@@ -19,6 +19,8 @@ import vn.qnam.dto.reponse.IntrospectResponse;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectDTO;
 import vn.qnam.dto.request.LogoutDTO;
+import vn.qnam.dto.request.RefreshDTO;
+import vn.qnam.exception.ResourceNotFoundException;
 import vn.qnam.model.InvalidatedToken;
 import vn.qnam.model.Role;
 import vn.qnam.model.User;
@@ -37,9 +39,16 @@ import java.util.*;
 public class AuthenticationService {
     private final UserRepository userRepository;
     private final InvalidatedRepository invalidatedRepository;
+    private final PasswordEncoder encoder = new BCryptPasswordEncoder(10);
+
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
-    PasswordEncoder encoder = new BCryptPasswordEncoder(10);
+
+    @Value("${jwt.valid-duration}")
+    private long VALID_DURATION;
+
+    @Value("${jwt.refreshable-duration}")
+    private long REFRESHABLE_DURATION;
 
     @Transactional
     public AuthenticationResponse authenticated(AuthenticationDTO authenticationDTO) {
@@ -59,7 +68,7 @@ public class AuthenticationService {
                 .issuer("vnqnam.com")
                 .issueTime(new Date())
                 .claim("Scope", buildScope(user))
-                .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
                 .jwtID(UUID.randomUUID().toString())
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -77,7 +86,7 @@ public class AuthenticationService {
         var token = introspectRequest.getToken();
         boolean isValid = true;
         try {
-            verifyToken(token);
+            verifyToken(token, false);
         } catch (JOSEException  | SecurityException e) {
             isValid = false;
         }
@@ -104,24 +113,49 @@ public class AuthenticationService {
         return scopes;
     }
 
-    public void logout(LogoutDTO request) throws ParseException, JOSEException {
-        SignedJWT signedJWT = verifyToken(request.getToken());
+    private InvalidatedToken invalidatedToken(String token) throws ParseException, JOSEException {
+        SignedJWT signedJWT = verifyToken(token, true);
         String jid = signedJWT.getJWTClaimsSet().getJWTID();
         Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder().id(jid).expiryTime(expiryTime).build();
-        invalidatedRepository.save(invalidatedToken);
+        return InvalidatedToken.builder().id(jid).expiryTime(expiryTime).build();
     }
 
-    private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+    public void logout(LogoutDTO request) throws ParseException, JOSEException {
+        try {
+            InvalidatedToken invalidatedToken = invalidatedToken(request.getToken());
+            invalidatedRepository.save(invalidatedToken);
+        } catch (SecurityException e) {
+            log.info("Token already expired.");
+        }
+
+    }
+
+    @Transactional
+    public AuthenticationResponse refreshToken(RefreshDTO request) throws ParseException, JOSEException {
+        InvalidatedToken invalidatedToken = invalidatedToken(request.getToken());
+
+        SignedJWT signedJWT = verifyToken(request.getToken(), true);
+        String username = signedJWT.getJWTClaimsSet().getSubject();
+        User user = userRepository.findUserByUserName(username).orElseThrow(
+                () -> new ResourceNotFoundException("User with username=" + username + " not exists"));
+        String token = generateToken(user);
+
+        invalidatedRepository.save(invalidatedToken);
+        return new AuthenticationResponse(true, token);
+    }
+
+    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
-        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        Date expiryTime = (isRefresh)
+                ? Date.from(signedJWT.getJWTClaimsSet().getIssueTime().toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS))
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
         var verified = signedJWT.verify(verifier);
         if (!(verified && expiryTime.after(new Date()))) {
             throw new JOSEException("JWT token is invalid or expired.");
         }
         if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
-            throw new SecurityException("Unauthenticated");
+            throw new SecurityException("Token has been invalidated.");
         }
         return signedJWT;
     }

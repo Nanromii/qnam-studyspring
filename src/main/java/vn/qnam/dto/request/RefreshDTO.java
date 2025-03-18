@@ -11,6 +11,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IntrospectDTO implements Serializable {
+public class RefreshDTO implements Serializable {
     private String token;
 }

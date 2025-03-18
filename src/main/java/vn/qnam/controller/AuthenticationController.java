@@ -16,6 +16,7 @@ import vn.qnam.dto.reponse.ResponseError;
 import vn.qnam.dto.request.AuthenticationDTO;
 import vn.qnam.dto.request.IntrospectDTO;
 import vn.qnam.dto.request.LogoutDTO;
+import vn.qnam.dto.request.RefreshDTO;
 import vn.qnam.service.AuthenticationService;
 
 import java.text.ParseException;
@@ -60,10 +61,26 @@ public class AuthenticationController {
         try {
             authService.logout(request);
             return new ResponseData<>(HttpStatus.OK.value(), "Log out completed.");
+        } catch (SecurityException e) {
+            return new ResponseError<>(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
         } catch (ParseException e) {
-            return new ResponseData<>(HttpStatus.BAD_REQUEST.value(), "Invalid request format: " + e.getMessage());
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Invalid request format: " + e.getMessage());
         } catch (JOSEException e) {
-            return new ResponseData<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing JWT: " + e.getMessage());
+            return new ResponseError<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing JWT: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseData<?> refresh(@RequestBody RefreshDTO request) {
+        try {
+            AuthenticationResponse auth = authService.refreshToken(request);
+            return new ResponseData<>(HttpStatus.OK.value(), "Refresh completed.", auth);
+        } catch (SecurityException e) {
+            return new ResponseError<>(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+        } catch (ParseException e) {
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "Invalid request format: " + e.getMessage());
+        } catch (JOSEException e) {
+            return new ResponseError<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing JWT: " + e.getMessage());
         }
     }
 }

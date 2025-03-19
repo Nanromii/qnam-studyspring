@@ -23,7 +23,6 @@ public class EnumPatternValidator implements ConstraintValidator<EnumPattern, En
         if (value == null) {
             return true;
         }
-
         Matcher m = pattern.matcher(value.name());
         return m.matches();
     }

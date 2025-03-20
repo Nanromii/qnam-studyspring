@@ -1,5 +1,6 @@
 package vn.qnam.service.impl;
 
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,9 +25,12 @@ import vn.qnam.model.User;
 import vn.qnam.repository.FilterRepository;
 import vn.qnam.repository.UserRepository;
 import vn.qnam.repository.specification.UserSpecificationBuilder;
+import vn.qnam.service.AuthenticationService;
+import vn.qnam.service.MailService;
 import vn.qnam.service.UserService;
 import vn.qnam.util.UserStatus;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,9 +45,11 @@ public class UserServiceImpl implements UserService{
     private final UserRepository userRepository;
     private final FilterRepository filterRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+    private final AuthenticationService authenticationService;
 
     @Override
-    public long addUser(UserRequestDTO userRequestDTO) {
+    public long addUser(UserRequestDTO userRequestDTO) throws MessagingException, UnsupportedEncodingException {
         User user = User.builder()
                 .firstName(userRequestDTO.getFirstName())
                 .lastName(userRequestDTO.getLastName())
@@ -56,9 +62,15 @@ public class UserServiceImpl implements UserService{
                 .status(userRequestDTO.getStatus())
                 .role(Role.builder().name(userRequestDTO.getRole()).build())
                 .build();
+
         userRequestDTO.getScore().forEach(a ->
                 user.saveScore(Score.builder().scoreValue(a.getScore()).build()));
         userRepository.save(user);
+
+        if (user.getId() != null) {
+            mailService.sendConfirmEmail(user.getEmail(), user.getId(), authenticationService.generateToken(user).substring(0, 10));
+        }
+
         log.info("User has saved!");
         return user.getId();
     }
@@ -226,6 +238,11 @@ public class UserServiceImpl implements UserService{
                 .totalPage(0)
                 .items(userRepository.findAll(pageable).stream().toList())
                 .build();
+    }
+
+    @Override
+    public void confirmUser(int userId, String secretCode) {
+        log.info("confirmed!.");
     }
 
     private List<Score> convertToScore(List<ScoreDTO> scoreDTOList, User user) {

@@ -2,6 +2,8 @@ package vn.qnam.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,9 @@ import vn.qnam.exception.ResourceNotFoundException;
 import vn.qnam.service.UserService;
 import vn.qnam.util.UserStatus;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
 @RestController
 @RequestMapping("/user")
 @Validated
@@ -41,6 +46,8 @@ public class UserController {
         try {
             long userId = userService.addUser(userDTO);
             return new ResponseData<>(HttpStatus.CREATED.value(), Translator.toLocale("user.add.success"), userId);
+        } catch (UnsupportedEncodingException | MessagingException e) {
+            return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (Exception e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError<>(HttpStatus.BAD_REQUEST.value(), "User added fail");
@@ -69,6 +76,23 @@ public class UserController {
     public ResponseData<?> deleteUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId) {
         userService.deleteUser(userId);
         return new ResponseData<>(HttpStatus.OK.value(), Translator.toLocale("user.del.success"));
+    }
+
+    @GetMapping("/confirm/{userId}")
+    @Operation(summary = "Confirm account", description = "API confirm user account")
+    public ResponseData<?> confirmUser(@Min(value = 1, message = "userId must be greater than 0") @PathVariable int userId, @RequestParam String secretCode, HttpServletResponse response) throws IOException {
+        log.info("Confirm user with userId={}, secretCode={}", userId, secretCode);
+        try {
+            userService.confirmUser(userId, secretCode);
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.changeStatus.success"));
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Confirmation was failure.");
+        } finally {
+            //chuyen huong toi log in
+            //tam thoi se chuyen huong tam ra day
+            response.sendRedirect("https://leetcode.com/u/_vnqnammm/");
+        }
     }
 
     @GetMapping("/{userId}")

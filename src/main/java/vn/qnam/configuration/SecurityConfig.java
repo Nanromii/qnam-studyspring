@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         //.requestMatchers(HttpMethod.GET, PRIVATE_ENDPOINTS).hasRole(Scope.ADMIN.name())
                                                                             //.hasAuthority(HAS_AUTHORITY)
+                        .requestMatchers(HttpMethod.GET, "/user/confirm/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(oauth2 ->

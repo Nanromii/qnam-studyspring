@@ -19,3 +19,5 @@ jwt:
   valid-duration: 3600 #second
   refreshable-duration: 36000 #second
   #Tuy vao ung dung ma thoi gian ton tai cua token, refresh token it hay nhieu
+mail:
+  from: "vuquangnam2005@gmail.com"

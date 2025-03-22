@@ -84,7 +84,7 @@ public class UserController {
         log.info("Confirm user with userId={}, secretCode={}", userId, secretCode);
         try {
             userService.confirmUser(userId, secretCode);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("user.changeStatus.success"));
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), Translator.toLocale("Confirm user successfully."));
         } catch (Exception e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Confirmation was failure.");

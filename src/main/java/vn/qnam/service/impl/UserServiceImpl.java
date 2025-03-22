@@ -3,6 +3,7 @@ package vn.qnam.service.impl;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -134,7 +135,9 @@ public class UserServiceImpl implements UserService{
                 .build();
     }
 
-    @Transactional
+    @Cacheable(value = "users", key = "#userId")
+    /*@Cacheable dung chung voi Transactional co the gay xung dot, nen xu li bang cach...???*/
+    @Transactional(readOnly = true)
     @Override
     public UserDetailResponse getUser(long userId) {
         User user = getUserById(userId);
@@ -257,8 +260,7 @@ public class UserServiceImpl implements UserService{
         return scoreList;
     }
 
-
-    private User getUserById(long userId) {
+    protected User getUserById(long userId) {
         return userRepository
                 .findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with userId={" + userId + "} not exists"));
